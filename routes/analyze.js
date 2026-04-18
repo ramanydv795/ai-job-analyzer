@@ -17,16 +17,27 @@ const client = new OpenAI({
 
 router.post("/upload-resume", upload.single('resume'), async (req, res) => {
   try {
+    console.log("=== UPLOAD HIT ===");
+
+    console.log("File object:", req.file);
+
     if (!req.file) {
+      console.log("No file uploaded");
       return res.status(400).json({ error: "No file uploaded" });
     }
 
+    console.log("File name:", req.file.originalname);
+    console.log("File type:", req.file.mimetype);
+
     const pdfData = await pdfParse(req.file.buffer);
 
+    console.log("PDF parsed successfully");
+
     res.json({ text: pdfData.text });
+
   } catch (error) {
-    console.error("PDF ERROR:", error);
-    res.status(500).json({ error: "PDF parsing failed" });
+    console.error("FULL ERROR:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
