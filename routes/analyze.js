@@ -2,7 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const router = express.Router();
 const OpenAI = require('openai');
+const multer = require('multer');
+const pdfParse = require('pdf-parse');
 
+const upload = multer({ storage: multer.memoryStorage() });
 const client = new OpenAI({
   apiKey: process.env.GROQ_API_KEY,
   baseURL: "https://api.groq.com/openai/v1",
@@ -55,6 +58,15 @@ router.post("/analyze", async (req, res) => {
         }
       ],
     });
+    router.post("/upload-resume", upload.single('resume'), async (req, res) => {
+  try {
+    const pdfData = await pdfParse(req.file.buffer);
+    res.json({ text: pdfData.text });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "PDF parsing failed" });
+  }
+});
 
     const critic = JSON.parse(criticResponse.choices[0].message.content);
     const coach = JSON.parse(coachResponse.choices[0].message.content);
