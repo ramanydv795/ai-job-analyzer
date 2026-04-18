@@ -88,13 +88,7 @@ const handlePDFUpload = async (e) => {
   onChange={(e) => setResume(e.target.value)}
 />
 
-          <textarea
-            className="bg-gray-800 rounded-xl p-4 h-56 
-            resize-none outline-none w-full text-sm"
-            placeholder="Paste your resume here..."
-            value={resume}
-            onChange={(e) => setResume(e.target.value)}
-          />
+       
         </div>
         <div>
           <p className="text-gray-400 mb-2 text-sm">Job Description</p>
