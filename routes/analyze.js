@@ -6,14 +6,22 @@ import multer from "multer";
 import OpenAI from "openai";
 import { createRequire } from "module";
 
+
 const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse"); // ✅ ONLY SAFE WAY
+
+const pdfParseModule = require("pdf-parse");
+
+const pdfParse =
+  typeof pdfParseModule === "function"
+    ? pdfParseModule
+    : pdfParseModule?.default || pdfParseModule;
 
 const router = express.Router();
 
+// -------------------- MULTER SETUP --------------------
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Groq client
+// -------------------- GROQ CLIENT --------------------
 const client = new OpenAI({
   apiKey: process.env.GROQ_API_KEY,
   baseURL: "https://api.groq.com/openai/v1",
@@ -28,7 +36,7 @@ router.post("/upload-resume", upload.single("resume"), async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    // ✅ SAFE PDF PARSE (no ENOENT possible now)
+    // ✅ PDF parsing (stable)
     const pdfData = await pdfParse(req.file.buffer);
 
     res.json({ text: pdfData.text });
@@ -39,7 +47,7 @@ router.post("/upload-resume", upload.single("resume"), async (req, res) => {
   }
 });
 
-// -------------------- ANALYZE --------------------
+// -------------------- ANALYZE RESUME --------------------
 router.post("/analyze", async (req, res) => {
   try {
     const { resume, jobDescription } = req.body;
@@ -48,7 +56,7 @@ router.post("/analyze", async (req, res) => {
       return res.status(400).json({ error: "Missing input data" });
     }
 
-    // 🔴 Critic Agent
+    // 🔴 CRITIC AGENT
     const criticResponse = await client.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       response_format: { type: "json_object" },
@@ -69,14 +77,14 @@ router.post("/analyze", async (req, res) => {
       ],
     });
 
-    // 🟢 Coach Agent
+    // 🟢 COACH AGENT
     const coachResponse = await client.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       response_format: { type: "json_object" },
       messages: [
         {
           role: "system",
-          content: `You are a career coach. Return JSON:
+          content: `You are a supportive career coach. Return JSON:
 - profileStrengths (array)
 - skillGapAnalysis (string)
 - microSkillBridge (array)
@@ -93,6 +101,7 @@ router.post("/analyze", async (req, res) => {
     const critic = JSON.parse(criticResponse.choices[0].message.content);
     const coach = JSON.parse(coachResponse.choices[0].message.content);
 
+    // -------------------- FINAL RESPONSE --------------------
     res.json({
       matchScore: critic.matchScore,
       aiBotScore: critic.aiBotScore,
@@ -112,4 +121,5 @@ router.post("/analyze", async (req, res) => {
   }
 });
 
+// -------------------- EXPORT --------------------
 export default router;
