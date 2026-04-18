@@ -1,55 +1,46 @@
-require('dotenv').config();
-const express = require('express');
-const router = express.Router();
-const OpenAI = require('openai');
-const multer = require('multer');
-const pdfParseLib = require("pdf-parse");
+import dotenv from "dotenv";
+dotenv.config();
 
+import express from "express";
+import multer from "multer";
+import OpenAI from "openai";
+import pdfParseLib from "pdf-parse";
+
+const router = express.Router();
+
+// ✅ FIX: safe CommonJS/ESM compatibility
 const pdfParse =
-  typeof pdfParseLib === "function"
-    ? pdfParseLib
-    : pdfParseLib?.default ||
-      pdfParseLib?.pdfParse ||
-      pdfParseLib;
-      const pdfData = await pdfParse(req.file.buffer);
-// Multer setup (memory storage for PDF)
+  pdfParseLib?.default ||
+  pdfParseLib;
+
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Groq (OpenAI-compatible)
+// Groq client
 const client = new OpenAI({
   apiKey: process.env.GROQ_API_KEY,
   baseURL: "https://api.groq.com/openai/v1",
 });
 
-
-router.post("/upload-resume", upload.single('resume'), async (req, res) => {
+// -------------------- UPLOAD RESUME --------------------
+router.post("/upload-resume", upload.single("resume"), async (req, res) => {
   try {
     console.log("=== UPLOAD HIT ===");
 
-    console.log("File object:", req.file);
-
     if (!req.file) {
-      console.log("No file uploaded");
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    console.log("File name:", req.file.originalname);
-    console.log("File type:", req.file.mimetype);
-
     const pdfData = await pdfParse(req.file.buffer);
-
-    console.log("PDF parsed successfully");
 
     res.json({ text: pdfData.text });
 
   } catch (error) {
-    console.error("FULL ERROR:", error);
+    console.error("UPLOAD ERROR:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-
-
+// -------------------- ANALYZE --------------------
 router.post("/analyze", async (req, res) => {
   try {
     const { resume, jobDescription } = req.body;
@@ -58,15 +49,14 @@ router.post("/analyze", async (req, res) => {
       return res.status(400).json({ error: "Missing input data" });
     }
 
-    // 🔴 Agent 1 - Critic
+    // 🔴 Critic Agent
     const criticResponse = await client.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       response_format: { type: "json_object" },
       messages: [
         {
           role: "system",
-          content: `You are a harsh technical recruiter looking for reasons to REJECT this candidate. 
-Return JSON with:
+          content: `You are a harsh technical recruiter. Return JSON:
 - matchScore (0-100)
 - missingSkills (array)
 - weaknesses (array)
@@ -80,18 +70,17 @@ Return JSON with:
       ],
     });
 
-    // 🟢 Agent 2 - Coach
+    // 🟢 Coach Agent
     const coachResponse = await client.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       response_format: { type: "json_object" },
       messages: [
         {
           role: "system",
-          content: `You are a supportive career coach. 
-Return JSON with:
+          content: `You are a career coach. Return JSON:
 - profileStrengths (array)
 - skillGapAnalysis (string)
-- microSkillBridge (array of objects with skill & project)
+- microSkillBridge (array)
 - overallVerdict (string)
 - recommendedJobTitles (array)`
         },
@@ -102,11 +91,9 @@ Return JSON with:
       ],
     });
 
-    // Parse responses
     const critic = JSON.parse(criticResponse.choices[0].message.content);
     const coach = JSON.parse(coachResponse.choices[0].message.content);
 
-    // Final response
     res.json({
       matchScore: critic.matchScore,
       aiBotScore: critic.aiBotScore,
@@ -126,4 +113,4 @@ Return JSON with:
   }
 });
 
-module.exports = router;
+export default router;
