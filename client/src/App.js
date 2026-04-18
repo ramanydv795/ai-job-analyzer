@@ -10,6 +10,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(false);
+
   const analyze = async () => {
     setLoading(true);
     setError(null);
@@ -24,36 +25,36 @@ export default function App() {
     }
     setLoading(false);
   };
+
   const exportPDF = async () => {
-  const element = document.getElementById("results");
-  const canvas = await html2canvas(element);
-  const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF("p", "mm", "a4");
-  const width = pdf.internal.pageSize.getWidth();
-  const height = (canvas.height * width) / canvas.width;
-  pdf.addImage(imgData, "PNG", 0, 0, width, height);
-  pdf.save("job-analysis-report.pdf");
-};
-const handlePDFUpload = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  
-  setPdfLoading(true);
-  const formData = new FormData();
-  formData.append('resume', file);
-  
-  const response = await axios.post(
-    "https://ai-job-analyzer-backend.onrender.com/api/upload-resume", 
-    formData,
-    { headers: { 'Content-Type': 'multipart/form-data' }}
-  );
-  
-  setResume(response.data.text);
-  setPdfLoading(false);
-};
+    const element = document.getElementById("results");
+    const canvas = await html2canvas(element);
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+    const width = pdf.internal.pageSize.getWidth();
+    const height = (canvas.height * width) / canvas.width;
+    pdf.addImage(imgData, "PNG", 0, 0, width, height);
+    pdf.save("job-analysis-report.pdf");
+  };
+
+  const handlePDFUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPdfLoading(true);
+    const formData = new FormData();
+    formData.append('resume', file);
+    const response = await axios.post(
+      "https://ai-job-analyzer-backend.onrender.com/api/upload-resume",
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' }}
+    );
+    setResume(response.data.text);
+    setPdfLoading(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-950 text-white p-8">
-      
+
       {/* Header */}
       <h1 className="text-4xl font-bold text-center mb-2">
         AI Job Analyzer
@@ -64,42 +65,44 @@ const handlePDFUpload = async (e) => {
 
       {/* Input Section */}
       <div className="grid grid-cols-2 gap-4 mb-4">
-        <div>
-         <p className="text-gray-400 mb-2 text-sm">Your Resume</p>
-
-{/* PDF Upload Button */}
-<label className="flex items-center gap-2 bg-gray-700 
-  hover:bg-gray-600 px-4 py-2 rounded-lg cursor-pointer 
-  text-sm mb-2 w-fit transition">
-  📄 {pdfLoading ? "Extracting..." : "Upload PDF Resume"}
-  <input
-    type="file"
-    accept=".pdf"
-    onChange={handlePDFUpload}
-    className="hidden"
-  />
-</label>
-
-<textarea
-  className="bg-gray-800 rounded-xl p-4 h-56 
-  resize-none outline-none w-full text-sm"
-  placeholder="Or paste your resume here..."
-  value={resume}
-  onChange={(e) => setResume(e.target.value)}
-/>
-
-       
-        </div>
-        <div>
-          <p className="text-gray-400 mb-2 text-sm">Job Description</p>
+        
+        {/* Resume Side */}
+        <div className="flex flex-col">
+          <p className="text-gray-400 mb-2 text-sm">Your Resume</p>
+          <label className="flex items-center gap-2 bg-gray-700 
+            hover:bg-gray-600 px-4 py-2 rounded-lg cursor-pointer 
+            text-sm mb-2 w-fit transition">
+            📄 {pdfLoading ? "Extracting..." : "Upload PDF Resume"}
+            <input
+              type="file"
+              accept=".pdf"
+              onChange={handlePDFUpload}
+              className="hidden"
+            />
+          </label>
           <textarea
-            className="bg-gray-800 rounded-xl p-4 h-56 
-            resize-none outline-none w-full text-sm"
+            className="bg-gray-800 rounded-xl p-4 flex-1 
+            resize-none outline-none w-full text-sm min-h-56"
+            placeholder="Or paste your resume here..."
+            value={resume}
+            onChange={(e) => setResume(e.target.value)}
+          />
+        </div>
+
+        {/* Job Description Side */}
+        <div className="flex flex-col">
+          <p className="text-gray-400 mb-2 text-sm">Job Description</p>
+          {/* Spacer to match upload button height */}
+          <div className="h-9 mb-2"/>
+          <textarea
+            className="bg-gray-800 rounded-xl p-4 flex-1 
+            resize-none outline-none w-full text-sm min-h-56"
             placeholder="Paste job description here..."
             value={jobDescription}
             onChange={(e) => setJobDescription(e.target.value)}
           />
         </div>
+
       </div>
 
       {/* Analyze Button */}
@@ -124,13 +127,15 @@ const handlePDFUpload = async (e) => {
       {/* Results */}
       {result && (
         <div id="results" className="space-y-4">
+
+          {/* Export Button */}
           <button
-  onClick={exportPDF}
-  className="w-full bg-purple-600 hover:bg-purple-700 
-  py-3 rounded-xl font-semibold text-lg transition mb-4"
->
-  📄 Export PDF Report
-</button>
+            onClick={exportPDF}
+            className="w-full bg-purple-600 hover:bg-purple-700 
+            py-3 rounded-xl font-semibold text-lg transition mb-4"
+          >
+            📄 Export PDF Report
+          </button>
 
           {/* Scores Row */}
           <div className="grid grid-cols-2 gap-4">
@@ -160,7 +165,6 @@ const handlePDFUpload = async (e) => {
               <h2 className="text-red-400 font-bold text-lg mb-4">
                 🔴 The Critic
               </h2>
-              
               <p className="text-gray-400 text-sm mb-2">Missing Skills</p>
               <div className="flex flex-wrap gap-2 mb-4">
                 {result.missingSkills?.map((skill, i) => (
@@ -171,7 +175,6 @@ const handlePDFUpload = async (e) => {
                   </span>
                 ))}
               </div>
-
               <p className="text-gray-400 text-sm mb-2">Rejection Reasons</p>
               <ul className="space-y-2">
                 {result.rejectionReasons?.map((reason, i) => (
@@ -188,7 +191,6 @@ const handlePDFUpload = async (e) => {
               <h2 className="text-green-400 font-bold text-lg mb-4">
                 🟢 The Coach
               </h2>
-
               <p className="text-gray-400 text-sm mb-2">Strengths</p>
               <div className="flex flex-wrap gap-2 mb-4">
                 {result.profileStrengths?.map((strength, i) => (
@@ -199,7 +201,6 @@ const handlePDFUpload = async (e) => {
                   </span>
                 ))}
               </div>
-
               <p className="text-gray-400 text-sm mb-2">Recommended Roles</p>
               <div className="flex flex-wrap gap-2">
                 {result.recommendedJobTitles?.map((title, i) => (
