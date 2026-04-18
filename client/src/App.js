@@ -1,3 +1,5 @@
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import { useState } from "react";
 import axios from "axios";
 
@@ -22,6 +24,16 @@ export default function App() {
     }
     setLoading(false);
   };
+  const exportPDF = async () => {
+  const element = document.getElementById("results");
+  const canvas = await html2canvas(element);
+  const imgData = canvas.toDataURL("image/png");
+  const pdf = new jsPDF("p", "mm", "a4");
+  const width = pdf.internal.pageSize.getWidth();
+  const height = (canvas.height * width) / canvas.width;
+  pdf.addImage(imgData, "PNG", 0, 0, width, height);
+  pdf.save("job-analysis-report.pdf");
+};
 
   return (
     <div className="min-h-screen bg-gray-950 text-white p-8">
@@ -79,7 +91,14 @@ export default function App() {
 
       {/* Results */}
       {result && (
-        <div className="space-y-4">
+        <div id="results" className="space-y-4">
+          <button
+  onClick={exportPDF}
+  className="w-full bg-purple-600 hover:bg-purple-700 
+  py-3 rounded-xl font-semibold text-lg transition mb-4"
+>
+  📄 Export PDF Report
+</button>
 
           {/* Scores Row */}
           <div className="grid grid-cols-2 gap-4">
