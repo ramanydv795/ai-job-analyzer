@@ -3,7 +3,12 @@ const express = require('express');
 const router = express.Router();
 const OpenAI = require('openai');
 const multer = require('multer');
-const pdfParse = require("pdf-parse").default || require("pdf-parse");
+const pdfParseLib = require("pdf-parse");
+
+const pdfParse =
+  pdfParseLib?.default ||
+  pdfParseLib?.pdfParse ||
+  pdfParseLib;
 // Multer setup (memory storage for PDF)
 const upload = multer({ storage: multer.memoryStorage() });
 
