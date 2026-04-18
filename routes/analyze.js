@@ -6,9 +6,12 @@ const multer = require('multer');
 const pdfParseLib = require("pdf-parse");
 
 const pdfParse =
-  pdfParseLib?.default ||
-  pdfParseLib?.pdfParse ||
-  pdfParseLib;
+  typeof pdfParseLib === "function"
+    ? pdfParseLib
+    : pdfParseLib?.default ||
+      pdfParseLib?.pdfParse ||
+      pdfParseLib;
+      const pdfData = await pdfParse(req.file.buffer);
 // Multer setup (memory storage for PDF)
 const upload = multer({ storage: multer.memoryStorage() });
 
