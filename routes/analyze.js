@@ -4,13 +4,13 @@ dotenv.config();
 import express from "express";
 import multer from "multer";
 import OpenAI from "openai";
-import pdfParseLib from "pdf-parse";
+import * as pdfParseLib from "pdf-parse";
 
 const router = express.Router();
 
 // ✅ FIX: safe CommonJS/ESM compatibility
 const pdfParse =
-  pdfParseLib?.default ||
+  pdfParseLib.default ||
   pdfParseLib;
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -30,7 +30,14 @@ router.post("/upload-resume", upload.single("resume"), async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const pdfData = await pdfParse(req.file.buffer);
+    let pdfData;
+
+try {
+  pdfData = await pdfParse(req.file.buffer);
+} catch (err) {
+  console.error("PDF PARSE FAILED:", err);
+  throw new Error("Invalid PDF or parse failure");
+}
 
     res.json({ text: pdfData.text });
 
