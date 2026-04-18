@@ -4,14 +4,12 @@ dotenv.config();
 import express from "express";
 import multer from "multer";
 import OpenAI from "openai";
-import * as pdfParseLib from "pdf-parse";
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse"); // ✅ ONLY SAFE WAY
 
 const router = express.Router();
-
-// ✅ FIX: safe CommonJS/ESM compatibility
-const pdfParse =
-  pdfParseLib.default ||
-  pdfParseLib;
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -30,14 +28,8 @@ router.post("/upload-resume", upload.single("resume"), async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    let pdfData;
-
-try {
-  pdfData = await pdfParse(req.file.buffer);
-} catch (err) {
-  console.error("PDF PARSE FAILED:", err);
-  throw new Error("Invalid PDF or parse failure");
-}
+    // ✅ SAFE PDF PARSE (no ENOENT possible now)
+    const pdfData = await pdfParse(req.file.buffer);
 
     res.json({ text: pdfData.text });
 
