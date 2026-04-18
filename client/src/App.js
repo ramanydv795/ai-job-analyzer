@@ -9,7 +9,7 @@ export default function App() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
+  const [pdfLoading, setPdfLoading] = useState(false);
   const analyze = async () => {
     setLoading(true);
     setError(null);
@@ -34,7 +34,23 @@ export default function App() {
   pdf.addImage(imgData, "PNG", 0, 0, width, height);
   pdf.save("job-analysis-report.pdf");
 };
-
+const handlePDFUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  setPdfLoading(true);
+  const formData = new FormData();
+  formData.append('resume', file);
+  
+  const response = await axios.post(
+    "https://ai-job-analyzer-backend.onrender.com/api/upload-resume", 
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' }}
+  );
+  
+  setResume(response.data.text);
+  setPdfLoading(false);
+};
   return (
     <div className="min-h-screen bg-gray-950 text-white p-8">
       
@@ -49,7 +65,29 @@ export default function App() {
       {/* Input Section */}
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
-          <p className="text-gray-400 mb-2 text-sm">Your Resume</p>
+         <p className="text-gray-400 mb-2 text-sm">Your Resume</p>
+
+{/* PDF Upload Button */}
+<label className="flex items-center gap-2 bg-gray-700 
+  hover:bg-gray-600 px-4 py-2 rounded-lg cursor-pointer 
+  text-sm mb-2 w-fit transition">
+  📄 {pdfLoading ? "Extracting..." : "Upload PDF Resume"}
+  <input
+    type="file"
+    accept=".pdf"
+    onChange={handlePDFUpload}
+    className="hidden"
+  />
+</label>
+
+<textarea
+  className="bg-gray-800 rounded-xl p-4 h-56 
+  resize-none outline-none w-full text-sm"
+  placeholder="Or paste your resume here..."
+  value={resume}
+  onChange={(e) => setResume(e.target.value)}
+/>
+
           <textarea
             className="bg-gray-800 rounded-xl p-4 h-56 
             resize-none outline-none w-full text-sm"
