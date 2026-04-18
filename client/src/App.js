@@ -12,7 +12,7 @@ export default function App() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.post(axios.post(axios.post("https://ai-job-analyzer-backend.onrender.com/api/analyze",, {
+      const response = await axios.post("https://ai-job-analyzer-backend.onrender.com/api/analyze", {
         resume,
         jobDescription,
       });
